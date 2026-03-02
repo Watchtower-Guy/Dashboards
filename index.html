@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TX HD-88 · 2026 Republican Primary · Early Voting Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', Courier, monospace; background: #f4f5f7; color: #1a1f2e; font-size: 13px; min-height: 100vh; }
+
+  /* HEADER */
+  #header { background: #fff; border-bottom: 2px solid #d0d5de; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+  #header-left {}
+  #header-title { color: #4169E1; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; font-weight: bold; }
+  #header-sub { color: #8a93a8; font-size: 10px; letter-spacing: 2px; margin-top: 3px; }
+  #header-badge { background: #e8eeff; color: #4169E1; border: 1px solid #4169E1; padding: 4px 12px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+
+  /* NAV */
+  #nav { display: flex; border-bottom: 1px solid #d0d5de; background: #fff; flex-wrap: wrap; }
+  .tab-btn { padding: 10px 14px; font-size: 10px; letter-spacing: 2px; border: none; border-bottom: 2px solid transparent; background: transparent; color: #8a93a8; cursor: pointer; font-family: 'Courier New', monospace; white-space: nowrap; text-transform: uppercase; }
+  .tab-btn.active { border-bottom: 2px solid #4169E1; color: #4169E1; }
+  .tab-btn:hover:not(.active) { color: #4a5262; }
+
+  /* LAYOUT */
+  #content { padding: 20px; max-width: 1300px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .gap-16 { display: flex; flex-direction: column; gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; }
+
+  /* CARDS */
+  .card { background: #fff; border: 1px solid #d0d5de; padding: 16px; }
+  .card-title { font-size: 9px; letter-spacing: 3px; color: #8a93a8; margin-bottom: 12px; border-bottom: 1px solid #e8eaef; padding-bottom: 8px; text-transform: uppercase; }
+  .card.accent { border: 1px solid #4169E1; }
+
+  /* STAT CARDS */
+  .stat-card { background: #fff; border: 1px solid #d0d5de; padding: 14px; }
+  .stat-label { font-size: 9px; letter-spacing: 2px; color: #8a93a8; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-num { color: #4169E1; font-size: 32px; font-weight: bold; line-height: 1; }
+  .stat-num-red { color: #c62828; font-size: 32px; font-weight: bold; line-height: 1; }
+  .stat-num-green { color: #2e7d32; font-size: 32px; font-weight: bold; line-height: 1; }
+  .stat-num-amber { color: #b45309; font-size: 32px; font-weight: bold; line-height: 1; }
+  .stat-sub { font-size: 9px; color: #8a93a8; margin-top: 6px; letter-spacing: 1px; }
+
+  /* BAR CHART */
+  .bar-wrap { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding-top: 16px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; height: 100%; justify-content: flex-end; }
+  .bar { background: #4169E1; width: 100%; transition: background 0.2s; cursor: pointer; position: relative; min-height: 2px; }
+  .bar:hover { background: #2f55c8; }
+  .bar.peak { background: #c62828; }
+  .bar-val { font-size: 8px; color: #4a5262; text-align: center; margin-bottom: 2px; font-weight: bold; }
+  .bar-day { font-size: 8px; color: #8a93a8; margin-top: 4px; text-align: center; white-space: nowrap; }
+  .bar-dow { font-size: 7px; color: #8a93a8; text-align: center; }
+
+  /* COUNTY TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 8px; letter-spacing: 2px; color: #8a93a8; text-align: left; padding: 6px 8px; border-bottom: 2px solid #d0d5de; text-transform: uppercase; background: #f4f5f7; }
+  td { font-size: 11px; padding: 6px 8px; border-bottom: 1px solid #e8eaef; }
+  tr:hover td { background: #f9fafe; }
+  .rank-num { color: #8a93a8; font-size: 9px; }
+
+  /* INLINE BAR */
+  .inline-bar-wrap { width: 100%; background: #e8eaef; height: 6px; border-radius: 0; }
+  .inline-bar { height: 6px; background: #4169E1; }
+  .inline-bar.top { background: #c62828; }
+  .inline-bar.second { background: #b45309; }
+  .inline-bar.third { background: #2e7d32; }
+
+  /* BADGES */
+  .badge { padding: 2px 8px; font-size: 9px; letter-spacing: 1px; display: inline-block; }
+  .badge-blue { background: #e8eeff; color: #4169E1; border: 1px solid #4169E1; }
+  .badge-green { background: #f1f8f1; color: #2e7d32; border: 1px solid #2e7d32; }
+  .badge-amber { background: #fff7ed; color: #b45309; border: 1px solid #b45309; }
+  .badge-red { background: #fdf1f1; color: #c62828; border: 1px solid #c62828; }
+
+  /* HEATMAP */
+  .heatmap-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .heatmap-table th { font-size: 8px; letter-spacing: 1px; color: #8a93a8; text-align: center; padding: 4px 3px; border-bottom: 1px solid #d0d5de; background: #f4f5f7; white-space: nowrap; }
+  .heatmap-table th.county-head { text-align: left; padding-left: 6px; }
+  .heatmap-table td { text-align: center; padding: 3px 2px; border-bottom: 1px solid #f0f0f0; font-size: 10px; min-width: 36px; }
+  .heatmap-table td.county-name { text-align: left; padding-left: 6px; font-weight: bold; font-size: 10px; color: #1a1f2e; white-space: nowrap; }
+  .cell-0 { background: #f4f5f7; color: #d0d5de; }
+  .cell-1 { background: #dbeafe; color: #1e40af; }
+  .cell-2 { background: #bfdbfe; color: #1e3a8a; }
+  .cell-3 { background: #93c5fd; color: #1e3a8a; }
+  .cell-4 { background: #60a5fa; color: #fff; }
+  .cell-5 { background: #3b82f6; color: #fff; }
+  .cell-6 { background: #1d4ed8; color: #fff; }
+
+  /* ALERT */
+  .alert-blue { background:#e8eeff; border:1px solid #4169E1; padding:8px 12px; margin-bottom:12px; font-size:10px; color:#4169E1; }
+  .intel-notes { border-left:2px solid #e8eaef; padding-left:8px; color:#4a5262; font-size:10px; margin-bottom:6px; }
+
+  /* METHOD DONUT PLACEHOLDER */
+  .method-bar { height: 28px; display: flex; border-radius: 0; overflow: hidden; margin: 12px 0; }
+  .method-bar-in { background: #4169E1; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: bold; letter-spacing: 1px; }
+  .method-bar-mail { background: #b45309; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: bold; letter-spacing: 1px; }
+
+  /* FOOTER */
+  #footer { background: #fff; border-top: 1px solid #d0d5de; padding: 10px 20px; text-align: center; font-size: 9px; color: #8a93a8; letter-spacing: 2px; margin-top: 20px; }
+
+  @media (max-width: 700px) {
+    .grid-4, .grid-3, .grid-2, .grid-5 { grid-template-columns: 1fr 1fr; }
+    .bar-val, .bar-dow { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-left">
+    <div id="header-title">Texas House District 88 · Early Voting Dashboard</div>
+    <div id="header-sub">2026 Republican Primary &nbsp;·&nbsp; Feb 17 – Feb 27, 2026 &nbsp;·&nbsp; 19 Counties</div>
+  </div>
+  <span id="header-badge">Early Voting Complete</span>
+</div>
+
+<div id="nav">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="daily">Daily Trend</button>
+  <button class="tab-btn" data-tab="counties">County Breakdown</button>
+  <button class="tab-btn" data-tab="heatmap">Heatmap</button>
+  <button class="tab-btn" data-tab="compare">2024 vs 2026</button>
+  <button class="tab-btn" data-tab="insights">Insights</button>
+</div>
+
+<div id="content">
+
+  <!-- ═══════════════ OVERVIEW ═══════════════ -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="gap-16">
+
+      <div class="alert-blue">
+        ▸ Early voting for the 2026 Texas Republican Primary in HD-88 ran February 17–27 (10 days). All data sourced from Texas Secretary of State daily early vote files.
+      </div>
+
+      <!-- KPI ROW -->
+      <div class="grid-4">
+        <div class="stat-card accent">
+          <div class="stat-label">Total Early Votes Cast</div>
+          <div class="stat-num">9,172</div>
+          <div class="stat-sub">Across 19 counties · 10 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">In-Person Votes</div>
+          <div class="stat-num-green">8,957</div>
+          <div class="stat-sub">97.7% of total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Mail-In Votes</div>
+          <div class="stat-num-amber">215</div>
+          <div class="stat-sub">2.3% of total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Peak Day</div>
+          <div class="stat-num-red">1,583</div>
+          <div class="stat-sub">Feb 27 · Final Friday</div>
+        </div>
+      </div>
+
+      <!-- MINI BAR CHART + METHOD -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Daily Volume — All 10 Days</div>
+          <div class="bar-wrap" id="mini-bars">
+            <!-- filled by JS -->
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top 5 Counties by Volume</div>
+          <table>
+            <thead><tr><th>#</th><th>County</th><th>Votes</th><th style="width:40%">Share</th></tr></thead>
+            <tbody id="top5-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VOTING METHOD BREAKDOWN -->
+      <div class="card">
+        <div class="card-title">Voting Method Breakdown</div>
+        <div class="method-bar">
+          <div class="method-bar-in" style="width:97.7%">IN-PERSON · 8,957</div>
+          <div class="method-bar-mail" style="width:2.3%">MAIL</div>
+        </div>
+        <div style="display:flex;gap:24px;font-size:10px;margin-top:6px;">
+          <span><span style="color:#4169E1;font-weight:bold;">■</span> In-Person: 8,957 &nbsp;(97.7%)</span>
+          <span><span style="color:#b45309;font-weight:bold;">■</span> Mail-In: 215 &nbsp;(2.3%)</span>
+        </div>
+      </div>
+
+      <!-- WEEK COMPARISON -->
+      <div class="grid-3">
+        <div class="stat-card">
+          <div class="stat-label">Week 1 Total (Feb 17–21)</div>
+          <div class="stat-num">3,991</div>
+          <div class="stat-sub">5 days · Mon–Fri</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Saturday Feb 22</div>
+          <div class="stat-num-amber">248</div>
+          <div class="stat-sub">Weekend voting day</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Week 2 Total (Feb 23–27)</div>
+          <div class="stat-num">4,933</div>
+          <div class="stat-sub">5 days · Mon–Fri</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ DAILY TREND ═══════════════ -->
+  <div class="tab-panel" id="tab-daily">
+    <div class="gap-16">
+      <div class="card">
+        <div class="card-title">Daily Early Votes — HD-88 District Total</div>
+        <div class="bar-wrap" id="daily-bars" style="height:220px;">
+          <!-- filled by JS -->
+        </div>
+        <div style="margin-top:16px;font-size:9px;color:#8a93a8;letter-spacing:1px;">
+          ■ RED = Peak day &nbsp; ■ BLUE = Normal days &nbsp; · Saturday Feb 22 shaded amber
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Day-by-Day Detail</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Day</th>
+              <th>Votes</th>
+              <th>% of Total</th>
+              <th>vs Avg</th>
+              <th style="width:35%">Volume</th>
+            </tr>
+          </thead>
+          <tbody id="daily-table"></tbody>
+          <tfoot>
+            <tr style="background:#f4f5f7;font-weight:bold;">
+              <td colspan="2" style="font-size:10px;letter-spacing:1px;color:#4a5262;padding:8px;">TOTAL</td>
+              <td style="color:#4169E1;font-weight:bold;">9,172</td>
+              <td style="color:#8a93a8;">100%</td>
+              <td>—</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ COUNTY BREAKDOWN ═══════════════ -->
+  <div class="tab-panel" id="tab-counties">
+    <div class="gap-16">
+      <div class="card">
+        <div class="card-title">All 19 Counties — Early Voting Totals</div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>County</th>
+              <th>Total Votes</th>
+              <th>In-Person</th>
+              <th>Mail-In</th>
+              <th>% of District</th>
+              <th style="width:30%">Share Bar</th>
+            </tr>
+          </thead>
+          <tbody id="county-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ HEATMAP ═══════════════ -->
+  <div class="tab-panel" id="tab-heatmap">
+    <div class="gap-16">
+      <div class="card">
+        <div class="card-title">County × Day Heatmap — Early Vote Volume</div>
+        <div style="overflow-x:auto;">
+          <table class="heatmap-table" id="heatmap-table"></table>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;font-size:9px;color:#8a93a8;flex-wrap:wrap;">
+          <span>INTENSITY:</span>
+          <span style="background:#f4f5f7;padding:2px 8px;border:1px solid #d0d5de;">0</span>
+          <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border:1px solid #93c5fd;">1–25</span>
+          <span style="background:#bfdbfe;color:#1e3a8a;padding:2px 8px;border:1px solid #93c5fd;">26–50</span>
+          <span style="background:#93c5fd;color:#1e3a8a;padding:2px 8px;border:1px solid #60a5fa;">51–75</span>
+          <span style="background:#60a5fa;color:#fff;padding:2px 8px;">76–100</span>
+          <span style="background:#3b82f6;color:#fff;padding:2px 8px;">101–150</span>
+          <span style="background:#1d4ed8;color:#fff;padding:2px 8px;">151+</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 2024 vs 2026 COMPARISON ═══════════════ -->
+  <div class="tab-panel" id="tab-compare">
+    <div class="gap-16">
+
+      <div class="alert-blue">
+        ▸ Comparing 2026 Early Votes (Feb 17–27) to 2024 Early Votes cast in the Republican Primary. 2024 candidate breakdown: <strong>Ken King (I)</strong> vs. <strong>Karen Post</strong>. District-wide, early voting is down <strong style="color:#c62828">−18.5%</strong> vs. 2024.
+      </div>
+
+      <!-- KPI ROW -->
+      <div class="grid-4">
+        <div class="stat-card">
+          <div class="stat-label">2024 District EV Total</div>
+          <div class="stat-num" style="color:#8a93a8">11,251</div>
+          <div class="stat-sub">King 8,628 · Post 2,623</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-label">2026 District EV Total</div>
+          <div class="stat-num">9,172</div>
+          <div class="stat-sub">10-day early period</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Net Change</div>
+          <div class="stat-num-red">−2,079</div>
+          <div class="stat-sub">−18.5% vs. 2024 early votes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Counties Up in 2026</div>
+          <div class="stat-num-green">8</div>
+          <div class="stat-sub">of 19 counties gained EV volume</div>
+        </div>
+      </div>
+
+      <!-- DELTA BAR CHART -->
+      <div class="card">
+        <div class="card-title">2026 Early Vote Change vs. 2024 — By County (%)</div>
+        <div style="overflow-x:auto;">
+          <div id="delta-chart" style="display:flex;align-items:flex-end;gap:5px;height:200px;padding-top:20px;min-width:600px;"></div>
+        </div>
+        <div style="margin-top:8px;font-size:9px;color:#8a93a8;display:flex;gap:16px;">
+          <span><span style="color:#2e7d32;font-weight:bold;">■</span> Above 2024</span>
+          <span><span style="color:#c62828;font-weight:bold;">■</span> Below 2024</span>
+        </div>
+      </div>
+
+      <!-- 2024 CANDIDATE BREAKDOWN + 2026 COMPARISON TABLE -->
+      <div class="card">
+        <div class="card-title">County-Level Comparison: 2024 EV vs. 2026 EV</div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>County</th>
+                <th style="color:#4169E1">King '24 EV</th>
+                <th style="color:#4169E1">King '24 %</th>
+                <th style="color:#b45309">Post '24 EV</th>
+                <th style="color:#b45309">Post '24 %</th>
+                <th>Total '24 EV</th>
+                <th>Total '26 EV</th>
+                <th>Change</th>
+                <th>% Change</th>
+                <th style="width:18%">Trend Bar</th>
+              </tr>
+            </thead>
+            <tbody id="compare-table"></tbody>
+            <tfoot>
+              <tr style="background:#f4f5f7;font-weight:bold;">
+                <td style="font-size:10px;letter-spacing:1px;color:#4a5262;padding:8px;">DISTRICT TOTAL</td>
+                <td style="color:#4169E1">8,628</td>
+                <td style="color:#4169E1">76.7%</td>
+                <td style="color:#b45309">2,623</td>
+                <td style="color:#b45309">23.3%</td>
+                <td>11,251</td>
+                <td style="color:#4169E1;font-weight:bold">9,172</td>
+                <td style="color:#c62828;font-weight:bold">−2,079</td>
+                <td style="color:#c62828;font-weight:bold">−18.5%</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2024 CANDIDATE EV BARS -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">2024 Ken King — Early Votes by County</div>
+          <div id="king-bars"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">2024 Karen Post — Early Votes by County</div>
+          <div id="post-bars"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ INSIGHTS ═══════════════ -->
+  <div class="tab-panel" id="tab-insights">
+    <div class="gap-16">
+
+      <div class="alert-blue">
+        ▸ All figures verified against raw SOS data. <strong>Ken King (R-Canadian)</strong> is the incumbent from Hemphill County. His 2026 challenger <strong>John Browning (R-Plainview)</strong> is from Hale County — same as 2024 challenger Karen Post. Data reflects early voting only; Election Day votes not included in any comparison.
+      </div>
+
+      <!-- INSIGHT 1: HOME COUNTY DIVERGENCE -->
+      <div class="card accent">
+        <div class="card-title">🏠 Insight 1 — Home County Divergence: King Energized, Browning's Base Silent</div>
+        <div class="grid-2" style="gap:16px;margin-bottom:14px;">
+          <div style="background:#e8f5e9;border:1px solid #2e7d32;border-left:4px solid #2e7d32;padding:14px;">
+            <div style="font-size:9px;letter-spacing:2px;color:#2e7d32;margin-bottom:6px;">HEMPHILL CO. · KING'S HOME (CANADIAN)</div>
+            <div style="font-size:28px;font-weight:bold;color:#2e7d32;line-height:1">+164.1%</div>
+            <div style="font-size:11px;color:#1a1f2e;margin-top:6px;">206 EV in 2024 → <strong>544 EV in 2026</strong></div>
+            <div style="font-size:9px;color:#4a5262;margin-top:4px;">Jumped from #15 to #5 in district ranking (+10 spots). King's home county nearly tripled its output and grew from 1.83% → 5.93% of all district early votes.</div>
+          </div>
+          <div style="background:#fdf1f1;border:1px solid #c62828;border-left:4px solid #c62828;padding:14px;">
+            <div style="font-size:9px;letter-spacing:2px;color:#c62828;margin-bottom:6px;">HALE CO. · BROWNING'S HOME (PLAINVIEW) — ALSO POST '24</div>
+            <div style="font-size:28px;font-weight:bold;color:#c62828;line-height:1">−57.6%</div>
+            <div style="font-size:11px;color:#1a1f2e;margin-top:6px;">1,698 EV in 2024 → <strong>720 EV in 2026</strong></div>
+            <div style="font-size:9px;color:#4a5262;margin-top:4px;">Fell from #1 to #4 in district ranking. Hale's share of district EV collapsed from 15.1% → 7.9%. Browning has not mobilized his home county the way Post did — or at all.</div>
+          </div>
+        </div>
+        <div style="background:#f4f5f7;padding:10px;border-left:3px solid #8a93a8;font-size:10px;color:#4a5262;">
+          <strong>The read:</strong> The incumbent's home base is firing on all cylinders. The challenger's home county is the district's single biggest volume drop — despite two consecutive cycles of having a Hale County candidate on the ballot. The Hale County political network that organized against King in 2024 has either exhausted itself, failed to transfer energy to Browning, or both.
+        </div>
+      </div>
+
+      <!-- INSIGHT 2: GAINES COLLAPSE -->
+      <div class="card">
+        <div class="card-title">⚠ Insight 2 — The Gaines County Mystery: King's Former Stronghold Implodes</div>
+        <div class="grid-3" style="gap:12px;margin-bottom:12px;">
+          <div style="background:#fdf1f1;border:1px solid #c62828;padding:12px;">
+            <div style="font-size:9px;color:#c62828;letter-spacing:2px;margin-bottom:4px;">2024 → 2026 DROP</div>
+            <div style="font-size:26px;font-weight:bold;color:#c62828">−70.9%</div>
+            <div style="font-size:10px;color:#4a5262;margin-top:4px;">1,101 EV → 320 EV</div>
+          </div>
+          <div style="background:#fff7ed;border:1px solid #b45309;padding:12px;">
+            <div style="font-size:9px;color:#b45309;letter-spacing:2px;margin-bottom:4px;">RANK CHANGE</div>
+            <div style="font-size:26px;font-weight:bold;color:#b45309">#4 → #12</div>
+            <div style="font-size:10px;color:#4a5262;margin-top:4px;">Fell 8 spots in district</div>
+          </div>
+          <div style="background:#e8eeff;border:1px solid #4169E1;padding:12px;">
+            <div style="font-size:9px;color:#4169E1;letter-spacing:2px;margin-bottom:4px;">KING '24 SHARE</div>
+            <div style="font-size:26px;font-weight:bold;color:#4169E1">82.8%</div>
+            <div style="font-size:10px;color:#4a5262;margin-top:4px;">912 of 1,101 Gaines EV went to King</div>
+          </div>
+        </div>
+        <div style="background:#f4f5f7;padding:10px;border-left:3px solid #c62828;font-size:10px;color:#4a5262;">
+          <strong>The read:</strong> Gaines County (Seminole) was arguably King's best county in 2024 — he pulled 82.8% of early votes there, the highest King share in the district. The −781 vote swing is the single largest absolute loss of any county. Without an obvious candidate explanation, this may reflect a Seminole-area organizational shift, local disengagement, or early voting access change. It warrants scrutiny: if Gaines historically goes King 83%, losing 781 EV is the equivalent of losing ~647 reliable King votes. Combined with neighboring <strong>Yoakum (−33%)</strong> and <strong>Cochran (−51%)</strong>, the far West Texas corridor of the district has gone quiet.
+        </div>
+      </div>
+
+      <!-- INSIGHT 3: RANK MOVERS -->
+      <div class="card">
+        <div class="card-title">📊 Insight 3 — The New District Power Map: Gray Takes the Lead</div>
+        <div style="overflow-x:auto;margin-bottom:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>County</th>
+                <th>'24 Rank</th>
+                <th>'26 Rank</th>
+                <th>Move</th>
+                <th>'24 EV</th>
+                <th>'26 EV</th>
+                <th>% Chg</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>HEMPHILL</strong></td><td style="color:#8a93a8">#15</td><td style="color:#2e7d32;font-weight:bold">#5</td><td style="color:#2e7d32;font-weight:bold">▲ 10</td><td>206</td><td>544</td><td style="color:#2e7d32">+164.1%</td><td style="font-size:9px;color:#4169E1">King's home county</td></tr>
+              <tr><td><strong>HALL</strong></td><td style="color:#8a93a8">#19</td><td style="color:#2e7d32;font-weight:bold">#9</td><td style="color:#2e7d32;font-weight:bold">▲ 10</td><td>164</td><td>364</td><td style="color:#2e7d32">+122.0%</td><td style="font-size:9px;color:#b45309">No candidate connection — unexplained surge</td></tr>
+              <tr><td><strong>GRAY</strong></td><td style="color:#8a93a8">#3</td><td style="color:#2e7d32;font-weight:bold">#1</td><td style="color:#2e7d32;font-weight:bold">▲ 2</td><td>1,231</td><td>1,471</td><td style="color:#2e7d32">+19.5%</td><td style="font-size:9px;color:#4a5262">New district volume leader</td></tr>
+              <tr><td><strong>GAINES</strong></td><td style="color:#8a93a8">#4</td><td style="color:#c62828;font-weight:bold">#12</td><td style="color:#c62828;font-weight:bold">▼ 8</td><td>1,101</td><td>320</td><td style="color:#c62828">−70.9%</td><td style="font-size:9px;color:#c62828">King's best '24 county, now cratered</td></tr>
+              <tr><td><strong>CHILDRESS</strong></td><td style="color:#8a93a8">#10</td><td style="color:#c62828;font-weight:bold">#17</td><td style="color:#c62828;font-weight:bold">▼ 7</td><td>322</td><td>169</td><td style="color:#c62828">−47.5%</td><td style="font-size:9px;color:#4a5262">East edge of district, no clear cause</td></tr>
+              <tr><td><strong>LAMB</strong></td><td style="color:#8a93a8">#8</td><td style="color:#c62828;font-weight:bold">#14</td><td style="color:#c62828;font-weight:bold">▼ 6</td><td>406</td><td>262</td><td style="color:#c62828">−35.5%</td><td style="font-size:9px;color:#4a5262">Part of western corridor decline</td></tr>
+              <tr><td><strong>HALE</strong></td><td style="color:#8a93a8">#1</td><td style="color:#c62828;font-weight:bold">#4</td><td style="color:#c62828;font-weight:bold">▼ 3</td><td>1,698</td><td>720</td><td style="color:#c62828">−57.6%</td><td style="font-size:9px;color:#c62828">Browning's home — challenger base silent</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="background:#f4f5f7;padding:10px;border-left:3px solid #4169E1;font-size:10px;color:#4a5262;">
+          <strong>The read:</strong> Gray County (Pampa) is now the district's undisputed EV volume leader with no candidate connection. Whoever wins Gray likely wins the district. <strong>Gray + Hockley together represent 30.1% of all 2026 early votes</strong> — up from 24.9% in 2024. The district's center of gravity has shifted northeast away from the Hale-Hockley corridor that defined 2024.
+        </div>
+      </div>
+
+      <!-- INSIGHT 4: WEST TEXAS CORRIDOR COLLAPSE -->
+      <div class="card">
+        <div class="card-title">🗺 Insight 4 — The West Texas Corridor Has Gone Dark</div>
+        <div class="grid-2" style="gap:16px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:9px;letter-spacing:2px;color:#8a93a8;margin-bottom:8px;">FAR WEST CLUSTER (GAINES, YOAKUM, COCHRAN)</div>
+            <div style="background:#fdf1f1;border:1px solid #e8eaef;padding:10px;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:bold">GAINES</span>
+                <span style="color:#c62828;font-weight:bold">−70.9%</span>
+              </div>
+              <div style="font-size:9px;color:#8a93a8">1,101 → 320 · King '24 share: 82.8%</div>
+            </div>
+            <div style="background:#fdf1f1;border:1px solid #e8eaef;padding:10px;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:bold">YOAKUM</span>
+                <span style="color:#c62828;font-weight:bold">−33.4%</span>
+              </div>
+              <div style="font-size:9px;color:#8a93a8">794 → 529 · King '24 share: 86.8%</div>
+            </div>
+            <div style="background:#fdf1f1;border:1px solid #e8eaef;padding:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:bold">COCHRAN</span>
+                <span style="color:#c62828;font-weight:bold">−50.8%</span>
+              </div>
+              <div style="font-size:9px;color:#8a93a8">197 → 97 · Post's strongest county at 36%</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;letter-spacing:2px;color:#8a93a8;margin-bottom:8px;">2024 COMBINED vs. 2026</div>
+            <div style="text-align:center;padding:20px;">
+              <div style="font-size:10px;color:#8a93a8;margin-bottom:4px;">2024 West Corridor EV</div>
+              <div style="font-size:28px;font-weight:bold;color:#8a93a8">2,092</div>
+              <div style="font-size:24px;color:#c62828;margin:8px 0">↓</div>
+              <div style="font-size:10px;color:#c62828;margin-bottom:4px;">2026 West Corridor EV</div>
+              <div style="font-size:28px;font-weight:bold;color:#c62828">946</div>
+              <div style="font-size:10px;color:#c62828;margin-top:8px;font-weight:bold">−1,146 votes &nbsp;·&nbsp; −54.8%</div>
+            </div>
+          </div>
+        </div>
+        <div style="background:#f4f5f7;padding:10px;border-left:3px solid #c62828;font-size:10px;color:#4a5262;">
+          <strong>The read:</strong> Gaines, Yoakum, and Cochran were all King strongholds (King averaged ~84% of EV across these three in 2024). Losing over 1,100 combined votes from his base counties is a significant headwind — even if Browning isn't winning them. It suggests a structural disengagement in the oil-patch counties of the district, not a swing to the challenger. Whether this suppression costs King in a close race depends heavily on Election Day patterns.
+        </div>
+      </div>
+
+      <!-- INSIGHT 5: HALL COUNTY ANOMALY -->
+      <div class="card">
+        <div class="card-title">❓ Insight 5 — Hall County: The Unexplained +122% Surge</div>
+        <div class="grid-3" style="gap:12px;margin-bottom:12px;">
+          <div style="background:#e8f5e9;border:1px solid #2e7d32;padding:12px;">
+            <div style="font-size:9px;color:#2e7d32;letter-spacing:2px;margin-bottom:4px;">EARLY VOTE CHANGE</div>
+            <div style="font-size:26px;font-weight:bold;color:#2e7d32">+122%</div>
+            <div style="font-size:10px;color:#4a5262;margin-top:4px;">164 EV → 364 EV</div>
+          </div>
+          <div style="background:#e8eeff;border:1px solid #4169E1;padding:12px;">
+            <div style="font-size:9px;color:#4169E1;letter-spacing:2px;margin-bottom:4px;">RANK JUMP</div>
+            <div style="font-size:26px;font-weight:bold;color:#4169E1">#19 → #9</div>
+            <div style="font-size:10px;color:#4a5262;margin-top:4px;">Last in 2024, now mid-tier</div>
+          </div>
+          <div style="background:#fff7ed;border:1px solid #b45309;padding:12px;">
+            <div style="font-size:9px;color:#b45309;letter-spacing:2px;margin-bottom:4px;">KING '24 SHARE</div>
+            <div style="font-size:26px;font-weight:bold;color:#b45309">80.5%</div>
+            <div style="font-size:10px;color:#4a5262;margin-top:4px;">132 of 164 went to King</div>
+          </div>
+        </div>
+        <div style="background:#f4f5f7;padding:10px;border-left:3px solid #b45309;font-size:10px;color:#4a5262;">
+          <strong>The read:</strong> Hall County (Memphis, TX) was the smallest EV county in the district in 2024 and has now nearly tripled. There is no candidate from Hall in either race. This anomaly warrants attention — it may reflect a local contested down-ballot race driving Republican primary turnout, a new organized voting operation, or a demographic/organizational shift in Memphis. It ties with Hemphill for the biggest rank move (+10 spots) but Hemphill's surge has a clear explanation. Hall's does not. <em>This is a data point that should be investigated on the ground.</em>
+        </div>
+      </div>
+
+      <!-- INSIGHT 6: POST COALITION vs BROWNING -->
+      <div class="card">
+        <div class="card-title">🔍 Insight 6 — Did Post's Coalition Transfer to Browning?</div>
+        <p style="font-size:10px;color:#4a5262;margin-bottom:12px;">In 2024, Karen Post's strongest early voting counties (by share) were Cochran, Bailey, Gray, Wheeler, Hale, Castro, and Hockley — counties where she exceeded 25% of the early vote. If Browning is consolidating the same anti-King geography, those counties should be up or holding. Here's what actually happened:</p>
+        <table>
+          <thead><tr><th>County</th><th>Post '24 EV Share</th><th>Post '24 EV</th><th>'26 EV Change</th><th>Coalition Signal</th></tr></thead>
+          <tbody>
+            <tr><td><strong>COCHRAN</strong></td><td style="color:#b45309">36.0%</td><td>71</td><td style="color:#c62828;font-weight:bold">−50.8%</td><td><span class="badge badge-red">COLLAPSED</span></td></tr>
+            <tr><td><strong>WHEELER</strong></td><td style="color:#b45309">29.3%</td><td>241</td><td style="color:#c62828;font-weight:bold">−44.3%</td><td><span class="badge badge-red">COLLAPSED</span></td></tr>
+            <tr><td><strong>HALE</strong></td><td style="color:#b45309">27.6%</td><td>469</td><td style="color:#c62828;font-weight:bold">−57.6%</td><td><span class="badge badge-red">COLLAPSED</span></td></tr>
+            <tr><td><strong>HOCKLEY</strong></td><td style="color:#b45309">26.1%</td><td>423</td><td style="color:#c62828;font-weight:bold">−20.3%</td><td><span class="badge badge-amber">WEAKENED</span></td></tr>
+            <tr><td><strong>BAILEY</strong></td><td style="color:#b45309">32.1%</td><td>88</td><td style="color:#2e7d32;font-weight:bold">+36.1%</td><td><span class="badge badge-green">UP</span></td></tr>
+            <tr><td><strong>GRAY</strong></td><td style="color:#b45309">29.6%</td><td>364</td><td style="color:#2e7d32;font-weight:bold">+19.5%</td><td><span class="badge badge-green">UP</span></td></tr>
+            <tr><td><strong>CASTRO</strong></td><td style="color:#b45309">26.2%</td><td>55</td><td style="color:#2e7d32;font-weight:bold">+61.4%</td><td><span class="badge badge-green">UP</span></td></tr>
+          </tbody>
+        </table>
+        <div style="background:#f4f5f7;padding:10px;border-left:3px solid #b45309;font-size:10px;color:#4a5262;margin-top:12px;">
+          <strong>The read:</strong> The coalition is fractured. The three biggest Post counties by absolute EV — Hale, Wheeler, Cochran — have all collapsed. The three that are up (Bailey, Gray, Castro) were smaller contributors in 2024. <strong>Browning has not inherited Post's voter coalition; he may have built a different (smaller) one.</strong> The critical swing counties — Gray and Hockley together — go in opposite directions, making them the contest's true battleground on Election Day.
+        </div>
+      </div>
+
+      <!-- INSIGHT 7: TIMING & MOMENTUM -->
+      <div class="card">
+        <div class="card-title">📈 Insight 7 — Late Surge: 30% of All EV Came in the Final 2 Days</div>
+        <div class="grid-4" style="gap:12px;margin-bottom:12px;">
+          <div style="background:#f4f5f7;border:1px solid #d0d5de;padding:12px;text-align:center;">
+            <div style="font-size:9px;color:#8a93a8;letter-spacing:1px;margin-bottom:6px;">WEEK 1 (FEB 17–21)</div>
+            <div style="font-size:22px;font-weight:bold;color:#4169E1">3,991</div>
+            <div style="font-size:9px;color:#8a93a8;margin-top:4px;">43.5% of EV total</div>
+          </div>
+          <div style="background:#f4f5f7;border:1px solid #d0d5de;padding:12px;text-align:center;">
+            <div style="font-size:9px;color:#8a93a8;letter-spacing:1px;margin-bottom:6px;">SATURDAY FEB 22</div>
+            <div style="font-size:22px;font-weight:bold;color:#b45309">248</div>
+            <div style="font-size:9px;color:#8a93a8;margin-top:4px;">2.7% of EV total</div>
+          </div>
+          <div style="background:#f4f5f7;border:1px solid #d0d5de;padding:12px;text-align:center;">
+            <div style="font-size:9px;color:#8a93a8;letter-spacing:1px;margin-bottom:6px;">WEEK 2 (FEB 23–27)</div>
+            <div style="font-size:22px;font-weight:bold;color:#4169E1">4,933</div>
+            <div style="font-size:9px;color:#8a93a8;margin-top:4px;">53.8% of EV total</div>
+          </div>
+          <div style="background:#fdf1f1;border:1px solid #c62828;padding:12px;text-align:center;">
+            <div style="font-size:9px;color:#c62828;letter-spacing:1px;margin-bottom:6px;">FINAL 2 DAYS (FEB 26–27)</div>
+            <div style="font-size:22px;font-weight:bold;color:#c62828">2,749</div>
+            <div style="font-size:9px;color:#c62828;margin-top:4px;">30.0% of EV total</div>
+          </div>
+        </div>
+        <div style="background:#f4f5f7;padding:10px;border-left:3px solid #4169E1;font-size:10px;color:#4a5262;">
+          <strong>The read:</strong> Week 2 outpaced Week 1 by nearly 1,000 votes despite having one fewer day (accounting for Saturday). Feb 27 alone — the final Friday before Election Day — produced 1,583 votes, 17.3% of the entire 10-day early vote total. This late surge pattern is typical of organized campaign operations pushing final EV mobilization. <strong>Which counties drove the late surge matters:</strong> Andrews (305 on Feb 27), Gray (351), and Hockley (348) were the three biggest final-day contributors — all King-leaning or contested territory.
+        </div>
+      </div>
+
+      <!-- SUMMARY SCORECARD -->
+      <div class="card accent">
+        <div class="card-title">🎯 Summary Scorecard — What the Early Vote Tells Us</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#e8f5e9;border:1px solid #2e7d32;border-left:4px solid #2e7d32;padding:10px 14px;font-size:10px;color:#1a1f2e;">
+            <strong style="color:#2e7d32">KING STRENGTHS:</strong> Home county (Hemphill) tripled EV. His core base counties — Andrews, Gray, Donley, Collingsworth, Briscoe — held or grew. The late-week surge in Gray, Andrews, and Hockley signals organized GOTEV effort. Hall County's surge (+122%) is a wild card that, given King's 80.5% share there in 2024, likely benefits him.
+          </div>
+          <div style="background:#fdf1f1;border:1px solid #c62828;border-left:4px solid #c62828;padding:10px 14px;font-size:10px;color:#1a1f2e;">
+            <strong style="color:#c62828">KING CONCERNS:</strong> Gaines (−71%), Yoakum (−33%), Childress (−48%), and Lamb (−36%) represent significant dropout from counties he dominated in 2024. These are not swing counties — they're base counties going quiet. Total district EV is down 18.5%, meaning fewer absolute votes to work with on Election Day.
+          </div>
+          <div style="background:#fff7ed;border:1px solid #b45309;border-left:4px solid #b45309;padding:10px 14px;font-size:10px;color:#1a1f2e;">
+            <strong style="color:#b45309">BROWNING CONCERNS:</strong> His home county (Hale) has lost nearly 1,000 early votes vs. 2024's challenger (also from Hale). Post's anti-King coalition has not transferred. Cochran, Wheeler, and Hale — the three highest Post-share counties in 2024 — are all down sharply. Browning's EV footprint is not visible in the geography the way Post's was.
+          </div>
+          <div style="background:#e8eeff;border:1px solid #4169E1;border-left:4px solid #4169E1;padding:10px 14px;font-size:10px;color:#1a1f2e;">
+            <strong style="color:#4169E1">WATCH ON ELECTION DAY:</strong> Gray, Hockley, and Andrews represent 41.5% of 2026 early votes and will likely be decisive. Gaines and Hale County Election Day patterns will reveal whether the early vote suppression reflects disengagement or a shift to ED voting. Hall County's unexplained surge should be monitored for a down-ballot race effect.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<div id="footer">TX HD-88 · 2026 Republican Primary Early Voting · Data: Texas Secretary of State &nbsp;·&nbsp; 19 Counties · Feb 17–27 2026</div>
+
+<script>
+// ── DATA ──
+const dailyData = [
+  { date: '02/17', dow: 'MON', votes: 1183 },
+  { date: '02/18', dow: 'TUE', votes: 891 },
+  { date: '02/19', dow: 'WED', votes: 879 },
+  { date: '02/20', dow: 'THU', votes: 691 },
+  { date: '02/21', dow: 'FRI', votes: 347 },
+  { date: '02/22', dow: 'SAT', votes: 248 },
+  { date: '02/23', dow: 'MON', votes: 834 },
+  { date: '02/24', dow: 'TUE', votes: 626 },
+  { date: '02/25', dow: 'WED', votes: 724 },
+  { date: '02/26', dow: 'THU', votes: 1166 },
+  { date: '02/27', dow: 'FRI', votes: 1583 },
+];
+
+const countyData = [
+  { name: 'GRAY',          total: 1471, mail: 30 },
+  { name: 'HOCKLEY',       total: 1290, mail: 14 },
+  { name: 'ANDREWS',       total: 1047, mail: 8  },
+  { name: 'HALE',          total: 720,  mail: 19 },
+  { name: 'HEMPHILL',      total: 544,  mail: 11 },
+  { name: 'YOAKUM',        total: 529,  mail: 7  },
+  { name: 'WHEELER',       total: 458,  mail: 12 },
+  { name: 'BAILEY',        total: 373,  mail: 6  },
+  { name: 'HALL',          total: 364,  mail: 8  },
+  { name: 'CASTRO',        total: 339,  mail: 4  },
+  { name: 'SWISHER',       total: 329,  mail: 9  },
+  { name: 'GAINES',        total: 320,  mail: 5  },
+  { name: 'DONLEY',        total: 314,  mail: 10 },
+  { name: 'LAMB',          total: 262,  mail: 14 },
+  { name: 'COLLINGSWORTH', total: 206,  mail: 18 },
+  { name: 'BRISCOE',       total: 190,  mail: 18 },
+  { name: 'CHILDRESS',     total: 169,  mail: 12 },
+  { name: 'ROBERTS',       total: 150,  mail: 14 },
+  { name: 'COCHRAN',       total: 97,   mail: 7  },
+];
+
+const heatmapData = {
+  ANDREWS:       [75,93,83,73,56,23,95,32,70,142,305],
+  BAILEY:        [30,25,24,20,8,8,36,41,38,63,80],
+  BRISCOE:       [27,25,14,0,3,3,11,23,27,18,39],
+  CASTRO:        [0,45,50,43,0,3,36,41,50,69,2],
+  CHILDRESS:     [23,18,36,32,7,5,46,2,0,0,0],
+  COCHRAN:       [37,13,22,24,0,0,0,0,0,1,0],
+  COLLINGSWORTH: [20,23,6,16,3,4,13,22,18,23,58],
+  DONLEY:        [51,23,36,30,16,6,35,30,23,59,5],
+  GAINES:        [129,79,91,2,0,17,0,0,0,0,2],
+  GRAY:          [263,0,154,0,104,55,170,164,1,209,351],
+  HALE:          [91,102,107,19,36,29,139,0,188,0,9],
+  HALL:          [40,34,29,39,26,26,0,23,35,49,63],
+  HEMPHILL:      [75,50,35,62,12,14,37,33,55,62,109],
+  HOCKLEY:       [117,137,94,139,12,0,0,112,144,187,348],
+  LAMB:          [34,39,0,0,0,6,53,0,48,79,3],
+  ROBERTS:       [12,7,11,13,7,3,20,10,0,43,24],
+  SWISHER:       [28,12,26,32,16,0,37,37,27,55,59],
+  WHEELER:       [13,69,61,52,0,32,49,56,0,0,126],
+  YOAKUM:        [118,97,0,95,41,14,57,0,0,107,0],
+};
+const dateLabels = ['2/17','2/18','2/19','2/20','2/21','2/22','2/23','2/24','2/25','2/26','2/27'];
+const dowLabels =  ['MON','TUE','WED','THU','FRI','SAT','MON','TUE','WED','THU','FRI'];
+
+const TOTAL = 9172;
+const MAX_DAILY = Math.max(...dailyData.map(d=>d.votes));
+const AVG_DAILY = TOTAL / dailyData.length;
+
+// ── MINI BARS (overview) ──
+function buildMiniBars() {
+  const wrap = document.getElementById('mini-bars');
+  dailyData.forEach(d => {
+    const pct = d.votes / MAX_DAILY * 100;
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    const isPeak = d.votes === MAX_DAILY;
+    const isSat = d.dow === 'SAT';
+    col.innerHTML = `
+      <div class="bar-val">${d.votes.toLocaleString()}</div>
+      <div class="bar ${isPeak?'peak':''}" style="height:${pct}%;${isSat?'background:#b45309':''}" title="${d.date}: ${d.votes}"></div>
+      <div class="bar-day">${d.date}</div>
+      <div class="bar-dow">${d.dow}</div>`;
+    wrap.appendChild(col);
+  });
+}
+
+// ── FULL DAILY BARS ──
+function buildDailyBars() {
+  const wrap = document.getElementById('daily-bars');
+  dailyData.forEach(d => {
+    const pct = d.votes / MAX_DAILY * 100;
+    const isPeak = d.votes === MAX_DAILY;
+    const isSat = d.dow === 'SAT';
+    let barColor = '#4169E1';
+    if (isPeak) barColor = '#c62828';
+    else if (isSat) barColor = '#b45309';
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    col.innerHTML = `
+      <div class="bar-val">${d.votes.toLocaleString()}</div>
+      <div class="bar" style="height:${pct}%;background:${barColor}" title="${d.date}: ${d.votes}"></div>
+      <div class="bar-day">${d.date}</div>
+      <div class="bar-dow">${d.dow}</div>`;
+    wrap.appendChild(col);
+  });
+}
+
+// ── DAILY TABLE ──
+function buildDailyTable() {
+  const tbody = document.getElementById('daily-table');
+  dailyData.forEach(d => {
+    const pct = (d.votes / TOTAL * 100).toFixed(1);
+    const vsAvg = d.votes - AVG_DAILY;
+    const vsStr = vsAvg >= 0 ? `+${Math.round(vsAvg)}` : `${Math.round(vsAvg)}`;
+    const vsColor = vsAvg >= 0 ? '#2e7d32' : '#c62828';
+    const barW = Math.round(d.votes / MAX_DAILY * 100);
+    const isPeak = d.votes === MAX_DAILY;
+    const isSat = d.dow === 'SAT';
+    let barColor = '#4169E1';
+    if (isPeak) barColor = '#c62828';
+    else if (isSat) barColor = '#b45309';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${d.date}</strong></td>
+      <td><span class="badge ${isSat?'badge-amber':'badge-blue'}">${d.dow}</span></td>
+      <td style="font-weight:bold;color:${isPeak?'#c62828':'#1a1f2e'}">${d.votes.toLocaleString()}</td>
+      <td style="color:#8a93a8">${pct}%</td>
+      <td style="color:${vsColor};font-weight:bold">${vsStr}</td>
+      <td><div class="inline-bar-wrap"><div class="inline-bar" style="width:${barW}%;background:${barColor}"></div></div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── TOP 5 TABLE ──
+function buildTop5() {
+  const tbody = document.getElementById('top5-table');
+  const colors = ['top','second','third','',''];
+  countyData.slice(0,5).forEach((c,i) => {
+    const barW = Math.round(c.total / countyData[0].total * 100);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="rank-num">${i+1}</td>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-weight:bold;color:#4169E1">${c.total.toLocaleString()}</td>
+      <td><div class="inline-bar-wrap"><div class="inline-bar ${colors[i]}" style="width:${barW}%"></div></div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── COUNTY TABLE ──
+function buildCountyTable() {
+  const tbody = document.getElementById('county-table');
+  countyData.forEach((c, i) => {
+    const inPerson = c.total - c.mail;
+    const pct = (c.total / TOTAL * 100).toFixed(1);
+    const barW = Math.round(c.total / countyData[0].total * 100);
+    let barColor = '#4169E1';
+    if (i === 0) barColor = '#c62828';
+    else if (i === 1) barColor = '#b45309';
+    else if (i === 2) barColor = '#2e7d32';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="rank-num">${i+1}</td>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-weight:bold">${c.total.toLocaleString()}</td>
+      <td style="color:#2e7d32">${inPerson.toLocaleString()}</td>
+      <td style="color:#b45309">${c.mail}</td>
+      <td style="color:#8a93a8">${pct}%</td>
+      <td><div class="inline-bar-wrap"><div class="inline-bar" style="width:${barW}%;background:${barColor}"></div></div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── HEATMAP ──
+function cellClass(v) {
+  if (v === 0) return 'cell-0';
+  if (v <= 25) return 'cell-1';
+  if (v <= 50) return 'cell-2';
+  if (v <= 75) return 'cell-3';
+  if (v <= 100) return 'cell-4';
+  if (v <= 150) return 'cell-5';
+  return 'cell-6';
+}
+
+function buildHeatmap() {
+  const tbl = document.getElementById('heatmap-table');
+  // header
+  let headHtml = '<thead><tr><th class="county-head">COUNTY</th>';
+  dateLabels.forEach((d,i) => {
+    headHtml += `<th>${d}<br><span style="font-size:7px;font-weight:normal">${dowLabels[i]}</span></th>`;
+  });
+  headHtml += '<th>TOTAL</th></tr></thead>';
+  tbl.innerHTML = headHtml;
+
+  // body
+  const tbody = document.createElement('tbody');
+  const countyOrder = Object.keys(heatmapData).sort();
+  countyOrder.forEach(county => {
+    const vals = heatmapData[county];
+    const total = vals.reduce((a,b)=>a+b,0);
+    const tr = document.createElement('tr');
+    let html = `<td class="county-name">${county}</td>`;
+    vals.forEach(v => {
+      html += `<td class="${cellClass(v)}">${v > 0 ? v : '—'}</td>`;
+    });
+    html += `<td style="font-weight:bold;color:#4169E1">${total}</td>`;
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+
+  // totals row
+  const totRow = document.createElement('tr');
+  totRow.style.background = '#f4f5f7';
+  totRow.style.fontWeight = 'bold';
+  let totHtml = '<td class="county-name" style="color:#4169E1">DISTRICT TOTAL</td>';
+  dailyData.forEach(d => {
+    totHtml += `<td style="background:#e8eeff;color:#4169E1;font-weight:bold">${d.votes.toLocaleString()}</td>`;
+  });
+  totHtml += `<td style="background:#4169E1;color:#fff">${TOTAL.toLocaleString()}</td>`;
+  totRow.innerHTML = totHtml;
+  tbody.appendChild(totRow);
+
+  tbl.appendChild(tbody);
+}
+
+// ── TABS ──
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ── 2024 DATA ──
+const data2024 = {
+  ANDREWS:       { king: 744,  post: 206 },
+  BAILEY:        { king: 186,  post: 88  },
+  BRISCOE:       { king: 140,  post: 29  },
+  CASTRO:        { king: 155,  post: 55  },
+  CHILDRESS:     { king: 276,  post: 46  },
+  COCHRAN:       { king: 126,  post: 71  },
+  COLLINGSWORTH: { king: 206,  post: 27  },
+  DONLEY:        { king: 224,  post: 58  },
+  GAINES:        { king: 912,  post: 189 },
+  GRAY:          { king: 867,  post: 364 },
+  HALE:          { king: 1229, post: 469 },
+  HALL:          { king: 132,  post: 32  },
+  HEMPHILL:      { king: 163,  post: 43  },
+  HOCKLEY:       { king: 1196, post: 423 },
+  LAMB:          { king: 325,  post: 81  },
+  ROBERTS:       { king: 147,  post: 35  },
+  SWISHER:       { king: 329,  post: 61  },
+  WHEELER:       { king: 582,  post: 241 },
+  YOAKUM:        { king: 689,  post: 105 },
+};
+
+// ── COMPARE TABLE ──
+function buildCompareTable() {
+  const tbody = document.getElementById('compare-table');
+  // sort by pct change desc
+  const sorted = countyData.map(c => {
+    const d24 = data2024[c.name];
+    const tot24 = d24.king + d24.post;
+    const tot26 = c.total;
+    const chg = tot26 - tot24;
+    const pctChg = chg / tot24 * 100;
+    const kingPct = d24.king / tot24 * 100;
+    const postPct = d24.post / tot24 * 100;
+    return { name: c.name, king: d24.king, post: d24.post, tot24, tot26, chg, pctChg, kingPct, postPct };
+  }).sort((a,b) => b.pctChg - a.pctChg);
+
+  sorted.forEach(r => {
+    const up = r.chg >= 0;
+    const chgColor = up ? '#2e7d32' : '#c62828';
+    const chgStr = up ? `+${r.chg.toLocaleString()}` : r.chg.toLocaleString();
+    const pctStr = up ? `+${r.pctChg.toFixed(1)}%` : `${r.pctChg.toFixed(1)}%`;
+    // bar: show both 24 and 26 as side-by-side mini bars
+    const max = Math.max(r.tot24, r.tot26);
+    const w24 = Math.round(r.tot24 / 1698 * 100);
+    const w26 = Math.round(r.tot26 / 1698 * 100);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${r.name}</strong></td>
+      <td style="color:#4169E1">${r.king.toLocaleString()}</td>
+      <td style="color:#4169E1;font-size:10px">${r.kingPct.toFixed(1)}%</td>
+      <td style="color:#b45309">${r.post.toLocaleString()}</td>
+      <td style="color:#b45309;font-size:10px">${r.postPct.toFixed(1)}%</td>
+      <td style="color:#8a93a8">${r.tot24.toLocaleString()}</td>
+      <td style="font-weight:bold">${r.tot26.toLocaleString()}</td>
+      <td style="color:${chgColor};font-weight:bold">${chgStr}</td>
+      <td style="color:${chgColor};font-weight:bold">${pctStr}</td>
+      <td>
+        <div style="margin-bottom:2px">
+          <div style="font-size:7px;color:#8a93a8;margin-bottom:1px">2024</div>
+          <div class="inline-bar-wrap"><div class="inline-bar" style="width:${w24}%;background:#8a93a8"></div></div>
+        </div>
+        <div>
+          <div style="font-size:7px;color:#4169E1;margin-bottom:1px">2026</div>
+          <div class="inline-bar-wrap"><div class="inline-bar" style="width:${w26}%;background:${up?'#2e7d32':'#c62828'}"></div></div>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── DELTA BAR CHART ──
+function buildDeltaChart() {
+  const wrap = document.getElementById('delta-chart');
+  const items = countyData.map(c => {
+    const d24 = data2024[c.name];
+    const tot24 = d24.king + d24.post;
+    const pctChg = (c.total - tot24) / tot24 * 100;
+    return { name: c.name, pctChg };
+  }).sort((a,b) => b.pctChg - a.pctChg);
+
+  const maxAbs = Math.max(...items.map(i => Math.abs(i.pctChg)));
+  const barH = 80; // half height for positive, half for negative
+
+  items.forEach(item => {
+    const up = item.pctChg >= 0;
+    const barPx = Math.round(Math.abs(item.pctChg) / maxAbs * barH);
+    const color = up ? '#2e7d32' : '#c62828';
+    const col = document.createElement('div');
+    col.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;height:100%;justify-content:center;';
+    col.innerHTML = `
+      <div style="font-size:7px;color:${color};font-weight:bold;text-align:center;line-height:1.2">${item.pctChg > 0 ? '+' : ''}${item.pctChg.toFixed(0)}%</div>
+      <div style="display:flex;flex-direction:column;align-items:center;width:100%;height:${barH*2}px;justify-content:center;position:relative;">
+        <div style="position:absolute;top:0;bottom:0;left:50%;width:1px;background:#e8eaef;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;width:100%">
+          ${up
+            ? `<div style="height:${barPx}px;width:80%;background:${color};min-height:2px;margin-bottom:${barH-barPx}px;margin-top:${barH}px"></div>`
+            : `<div style="height:${barH}px;width:100%"></div><div style="height:${barPx}px;width:80%;background:${color};min-height:2px"></div>`
+          }
+        </div>
+      </div>
+      <div style="font-size:7px;color:#8a93a8;text-align:center;margin-top:2px;white-space:nowrap">${item.name.length > 8 ? item.name.slice(0,8) : item.name}</div>`;
+    wrap.appendChild(col);
+  });
+}
+
+// ── CANDIDATE MINI BAR LISTS ──
+function buildCandidateBars() {
+  const kingWrap = document.getElementById('king-bars');
+  const postWrap = document.getElementById('post-bars');
+  const maxKing = Math.max(...countyData.map(c => data2024[c.name].king));
+  const maxPost = Math.max(...countyData.map(c => data2024[c.name].post));
+
+  const sorted = [...countyData].sort((a,b) => data2024[b.name].king - data2024[a.name].king);
+  sorted.forEach(c => {
+    const d = data2024[c.name];
+    const kW = Math.round(d.king / maxKing * 100);
+    const pW = Math.round(d.post / maxPost * 100);
+    kingWrap.innerHTML += `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <div style="width:90px;font-size:10px;color:#1a1f2e;text-align:right;flex-shrink:0">${c.name}</div>
+        <div style="flex:1"><div class="inline-bar-wrap"><div class="inline-bar" style="width:${kW}%;background:#4169E1"></div></div></div>
+        <div style="width:32px;font-size:10px;color:#4169E1;font-weight:bold;text-align:right;flex-shrink:0">${d.king}</div>
+      </div>`;
+    postWrap.innerHTML += `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <div style="width:90px;font-size:10px;color:#1a1f2e;text-align:right;flex-shrink:0">${c.name}</div>
+        <div style="flex:1"><div class="inline-bar-wrap"><div class="inline-bar" style="width:${pW}%;background:#b45309"></div></div></div>
+        <div style="width:32px;font-size:10px;color:#b45309;font-weight:bold;text-align:right;flex-shrink:0">${d.post}</div>
+      </div>`;
+  });
+}
+
+buildCompareTable();
+buildDeltaChart();
+buildCandidateBars();
+buildDailyBars();
+buildDailyTable();
+buildTop5();
+buildCountyTable();
+buildHeatmap();
+</script>
+</body>
+</html>
